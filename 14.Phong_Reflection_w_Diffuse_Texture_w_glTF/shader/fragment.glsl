@@ -5,9 +5,11 @@ uniform sampler2D u_diffuse_texture;
 uniform vec3 u_view_position_wc;
 uniform vec3 u_light_position_wc;
 
+uniform vec4 u_light_ambient;
 uniform vec4 u_light_diffuse;
 uniform vec4 u_light_specular;
 
+uniform vec4 u_material_ambient;
 uniform vec4 u_material_specular;
 uniform float u_material_shininess;
 
@@ -23,6 +25,8 @@ vec4 calc_color()
   vec3 l_wc = normalize(u_light_position_wc - v_position_wc);
   vec3 r_wc = reflect(-l_wc, n_wc);
   vec3 v_wc = u_view_position_wc;
+
+  color += u_light_ambient * u_material_ambient;
 
   vec4 material_diffuse = texture2D(u_diffuse_texture, v_texcoord);
       
