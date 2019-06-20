@@ -556,6 +556,11 @@ void draw_scene()
 
 int main(void)
 {
+  char filename[30];
+  std::cout << "파일 이름 입력: ";
+  char dir[] = "BoxTextured/";
+  std::cin >> filename;
+
   GLFWwindow* window;
 
   // Initialize GLFW library
@@ -583,7 +588,8 @@ int main(void)
   init_state();
   init_shader_program();
 
-  load_model(model, "BoxTextured/BoxTextured.gltf");
+  load_model(model, strcat(dir, filename));
+  //load_model(model, "BoxTextured/BoxTextured.gltf");
 
   // GPU의 VBO를 초기화하는 함수 호출
   init_buffer_objects();
