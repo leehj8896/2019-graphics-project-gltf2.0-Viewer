@@ -15,45 +15,47 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
 #include "../glTF/tiny_gltf.h"
-#define BUFFER_OFFSET(i) ((char*)0 + (i))
+#define BUFFER_OFFSET(i) ((char *)0 + (i))
 
 #include "../common/transform.hpp"
 
-namespace kmuvcl {
-  namespace math {
-    template <typename T>
-    inline mat4x4f quat2mat(T x, T y, T z, T w)
-    {
-      T xx = x * x;
-      T xy = x * y;
-      T xz = x * z;
-      T xw = x * w;
+namespace kmuvcl
+{
+namespace math
+{
+template <typename T>
+inline mat4x4f quat2mat(T x, T y, T z, T w)
+{
+  T xx = x * x;
+  T xy = x * y;
+  T xz = x * z;
+  T xw = x * w;
 
-      T yy = y * y;
-      T yz = y * z;
-      T yw = y * w;
+  T yy = y * y;
+  T yz = y * z;
+  T yw = y * w;
 
-      T zz = z * z;
-      T zw = z * w;
+  T zz = z * z;
+  T zw = z * w;
 
-      mat4x4f mat_rot;
-      mat_rot(0, 0) = 1.0f - 2.0f*(yy + zz);
-      mat_rot(0, 1) = 2.0f*(xy - zw);
-      mat_rot(0, 2) = 2.0f*(xz + yw);
+  mat4x4f mat_rot;
+  mat_rot(0, 0) = 1.0f - 2.0f * (yy + zz);
+  mat_rot(0, 1) = 2.0f * (xy - zw);
+  mat_rot(0, 2) = 2.0f * (xz + yw);
 
-      mat_rot(1, 0) = 2.0f*(xy + zw);
-      mat_rot(1, 1) = 1.0f - 2.0f*(xx + zz);
-      mat_rot(1, 2) = 2.0f*(yz - xw);
+  mat_rot(1, 0) = 2.0f * (xy + zw);
+  mat_rot(1, 1) = 1.0f - 2.0f * (xx + zz);
+  mat_rot(1, 2) = 2.0f * (yz - xw);
 
-      mat_rot(2, 0) = 2.0f*(xz - yw);
-      mat_rot(2, 1) = 2.0f*(yz + xw);
-      mat_rot(2, 2) = 1.0f - 2.0f*(xx + yy);
+  mat_rot(2, 0) = 2.0f * (xz - yw);
+  mat_rot(2, 1) = 2.0f * (yz + xw);
+  mat_rot(2, 2) = 1.0f - 2.0f * (xx + yy);
 
-      mat_rot(3, 3) = 1.0f;
-      return mat_rot;
-    }
-  } // math
-} // kmuvcl
+  mat_rot(3, 3) = 1.0f;
+  return mat_rot;
+}
+} // namespace math
+} // namespace kmuvcl
 
 ////////////////////////////////////////////////////////////////////////////////
 /// OpenGL 초기화 관련 함수
@@ -64,34 +66,36 @@ void init_state();
 ////////////////////////////////////////////////////////////////////////////////
 /// 쉐이더 관련 변수 및 함수
 ////////////////////////////////////////////////////////////////////////////////
-GLuint  program;          // 쉐이더 프로그램 객체의 레퍼런스 값
-GLint   loc_a_position;
-GLint   loc_a_normal;
-GLint   loc_a_texcoord;
+GLuint program; // 쉐이더 프로그램 객체의 레퍼런스 값
+GLint loc_a_position;
+GLint loc_a_normal;
+GLint loc_a_texcoord;
 
-GLint   loc_u_PVM;
-GLint   loc_u_M;
+GLint loc_u_PVM;
+GLint loc_u_M;
 
-GLint   loc_u_view_position_wc;
-GLint   loc_u_light_position_wc;
+GLint loc_u_view_position_wc;
+GLint loc_u_light_position_wc;
 
-GLint   loc_u_light_diffuse;
-GLint   loc_u_light_specular;
+GLint loc_u_light_ambient; // uniform 변수 u_light_ambient 위치
+GLint loc_u_light_diffuse;
+GLint loc_u_light_specular;
 
-GLint   loc_u_material_specular;
-GLint   loc_u_material_shininess;
+GLint loc_u_material_ambient; // uniform 변수 u_material_ambient 위치
+GLint loc_u_material_specular;
+GLint loc_u_material_shininess;
 
-GLint   loc_u_diffuse_texture;
+GLint loc_u_diffuse_texture;
 
-GLuint create_shader_from_file(const std::string& filename, GLuint shader_type);
+GLuint create_shader_from_file(const std::string &filename, GLuint shader_type);
 void init_shader_program();
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 /// 변환 관련 변수 및 함수
 ////////////////////////////////////////////////////////////////////////////////
-kmuvcl::math::mat4x4f   mat_view, mat_proj;
-kmuvcl::math::mat4x4f   mat_PVM;
+kmuvcl::math::mat4x4f mat_view, mat_proj;
+kmuvcl::math::mat4x4f mat_PVM;
 
 void set_transform();
 ////////////////////////////////////////////////////////////////////////////////
@@ -111,19 +115,21 @@ GLuint diffuse_texid;
 kmuvcl::math::vec3f view_position_wc;
 
 kmuvcl::math::vec3f light_position_wc = kmuvcl::math::vec3f(0.0f, 1.0f, 1.0f);
+kmuvcl::math::vec4f light_ambient = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 kmuvcl::math::vec4f light_diffuse = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 kmuvcl::math::vec4f light_specular = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 
+kmuvcl::math::vec4f material_ambient = kmuvcl::math::vec4f(0.0f, 0.0f, 0.0f, 1.0f);
 kmuvcl::math::vec4f material_specular = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
-float               material_shininess = 60.0f;
+float material_shininess = 60.0f;
 
 bool load_model(tinygltf::Model &model, const std::string filename);
-void init_buffer_objects();     // VBO init 함수: GPU의 VBO를 초기화하는 함수.
+void init_buffer_objects(); // VBO init 함수: GPU의 VBO를 초기화하는 함수.
 void init_texture_objects();
 
 void draw_scene();
-void draw_node(const tinygltf::Node& node, kmuvcl::math::mat4f mat_view);
-void draw_mesh(const tinygltf::Mesh& mesh, const kmuvcl::math::mat4f& mat_model);
+void draw_node(const tinygltf::Node &node, kmuvcl::math::mat4f mat_view);
+void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model);
 ////////////////////////////////////////////////////////////////////////////////
 
 void init_state()
@@ -132,7 +138,7 @@ void init_state()
 }
 
 // GLSL 파일을 읽어서 컴파일한 후 쉐이더 객체를 생성하는 함수
-GLuint create_shader_from_file(const std::string& filename, GLuint shader_type)
+GLuint create_shader_from_file(const std::string &filename, GLuint shader_type)
 {
   GLuint shader = 0;
 
@@ -142,19 +148,19 @@ GLuint create_shader_from_file(const std::string& filename, GLuint shader_type)
   std::string shader_string;
 
   shader_string.assign(
-    (std::istreambuf_iterator<char>(shader_file)),
-    std::istreambuf_iterator<char>());
+      (std::istreambuf_iterator<char>(shader_file)),
+      std::istreambuf_iterator<char>());
 
   // Get rid of BOM in the head of shader_string
   // Because, some GLSL compiler (e.g., Mesa Shader compiler) cannot handle UTF-8 with BOM
-  if (shader_string.compare(0, 3, "\xEF\xBB\xBF") == 0)  // Is the file marked as UTF-8?
+  if (shader_string.compare(0, 3, "\xEF\xBB\xBF") == 0) // Is the file marked as UTF-8?
   {
     std::cout << "Shader code (" << filename << ") is written in UTF-8 with BOM" << std::endl;
     std::cout << "  When we pass the shader code to GLSL compiler, we temporarily get rid of BOM" << std::endl;
-    shader_string.erase(0, 3);                  // Now get rid of the BOM.
+    shader_string.erase(0, 3); // Now get rid of the BOM.
   }
 
-  const GLchar * shader_src = shader_string.c_str();
+  const GLchar *shader_src = shader_string.c_str();
   glShaderSource(shader, 1, (const GLchar **)&shader_src, NULL);
   glCompileShader(shader);
 
@@ -182,14 +188,12 @@ GLuint create_shader_from_file(const std::string& filename, GLuint shader_type)
 // vertex shader와 fragment shader를 링크시켜 program을 생성하는 함수
 void init_shader_program()
 {
-  GLuint vertex_shader
-    = create_shader_from_file("./shader/vertex.glsl", GL_VERTEX_SHADER);
+  GLuint vertex_shader = create_shader_from_file("./shader/vertex.glsl", GL_VERTEX_SHADER);
 
   std::cout << "vertex_shader id: " << vertex_shader << std::endl;
   assert(vertex_shader != 0);
 
-  GLuint fragment_shader
-    = create_shader_from_file("./shader/fragment.glsl", GL_FRAGMENT_SHADER);
+  GLuint fragment_shader = create_shader_from_file("./shader/fragment.glsl", GL_FRAGMENT_SHADER);
 
   std::cout << "fragment_shader id: " << fragment_shader << std::endl;
   assert(fragment_shader != 0);
@@ -226,9 +230,11 @@ void init_shader_program()
   loc_u_view_position_wc = glGetUniformLocation(program, "u_view_position_wc");
   loc_u_light_position_wc = glGetUniformLocation(program, "u_light_position_wc");
 
+  loc_u_light_ambient = glGetUniformLocation(program, "u_light_ambient");
   loc_u_light_diffuse = glGetUniformLocation(program, "u_light_diffuse");
   loc_u_light_specular = glGetUniformLocation(program, "u_light_specular");
 
+  loc_u_material_ambient = glGetUniformLocation(program, "u_material_ambient");
   loc_u_material_specular = glGetUniformLocation(program, "u_material_specular");
   loc_u_material_shininess = glGetUniformLocation(program, "u_material_shininess");
 
@@ -272,50 +278,50 @@ bool load_model(tinygltf::Model &model, const std::string filename)
 
 void init_buffer_objects()
 {
-  const std::vector<tinygltf::Mesh>& meshes = model.meshes;
-  const std::vector<tinygltf::Accessor>& accessors = model.accessors;
-  const std::vector<tinygltf::BufferView>& bufferViews = model.bufferViews;
-  const std::vector<tinygltf::Buffer>& buffers = model.buffers;
+  const std::vector<tinygltf::Mesh> &meshes = model.meshes;
+  const std::vector<tinygltf::Accessor> &accessors = model.accessors;
+  const std::vector<tinygltf::BufferView> &bufferViews = model.bufferViews;
+  const std::vector<tinygltf::Buffer> &buffers = model.buffers;
 
-  for (const tinygltf::Mesh& mesh : meshes)
+  for (const tinygltf::Mesh &mesh : meshes)
   {
-    for (const tinygltf::Primitive& primitive : mesh.primitives)
+    for (const tinygltf::Primitive &primitive : mesh.primitives)
     {
-      const tinygltf::Accessor& accessor = accessors[primitive.indices];
-      const tinygltf::BufferView& bufferView = bufferViews[accessor.bufferView];
-      const tinygltf::Buffer& buffer = buffers[bufferView.buffer];
+      const tinygltf::Accessor &accessor = accessors[primitive.indices];
+      const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+      const tinygltf::Buffer &buffer = buffers[bufferView.buffer];
 
       glGenBuffers(1, &index_buffer);
       glBindBuffer(bufferView.target, index_buffer);
       glBufferData(bufferView.target, bufferView.byteLength,
-        &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+                   &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
 
-      for (const auto& attrib : primitive.attributes)
+      for (const auto &attrib : primitive.attributes)
       {
-        const tinygltf::Accessor& accessor = accessors[attrib.second];
-        const tinygltf::BufferView& bufferView = bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = buffers[bufferView.buffer];
+        const tinygltf::Accessor &accessor = accessors[attrib.second];
+        const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+        const tinygltf::Buffer &buffer = buffers[bufferView.buffer];
 
         if (attrib.first.compare("POSITION") == 0)
         {
           glGenBuffers(1, &position_buffer);
           glBindBuffer(bufferView.target, position_buffer);
           glBufferData(bufferView.target, bufferView.byteLength,
-            &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+                       &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
         }
         else if (attrib.first.compare("NORMAL") == 0)
         {
           glGenBuffers(1, &normal_buffer);
           glBindBuffer(bufferView.target, normal_buffer);
           glBufferData(bufferView.target, bufferView.byteLength,
-            &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+                       &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
         }
         else if (attrib.first.compare("TEXCOORD_0") == 0)
         {
           glGenBuffers(1, &texcoord_buffer);
           glBindBuffer(bufferView.target, texcoord_buffer);
           glBufferData(bufferView.target, bufferView.byteLength,
-            &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+                       &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
         }
       }
     }
@@ -324,36 +330,40 @@ void init_buffer_objects()
 
 void init_texture_objects()
 {
-  const std::vector<tinygltf::Texture>& textures = model.textures;
-  const std::vector<tinygltf::Image>& images = model.images;
-  const std::vector<tinygltf::Sampler>& samplers = model.samplers;
+  const std::vector<tinygltf::Texture> &textures = model.textures;
+  const std::vector<tinygltf::Image> &images = model.images;
+  const std::vector<tinygltf::Sampler> &samplers = model.samplers;
 
-  for (const tinygltf::Texture& texture : textures)
+  for (const tinygltf::Texture &texture : textures)
   {
     glGenTextures(1, &diffuse_texid);
     glBindTexture(GL_TEXTURE_2D, diffuse_texid);
 
-    const tinygltf::Image& image = images[texture.source];
-    const tinygltf::Sampler& sampler = samplers[texture.sampler];
+    const tinygltf::Image &image = images[texture.source];
+    const tinygltf::Sampler &sampler = samplers[texture.sampler];
 
     GLenum format = GL_RGBA;
-    if (image.component == 1) {
+    if (image.component == 1)
+    {
       format = GL_RED;
     }
-    else if (image.component == 2) {
+    else if (image.component == 2)
+    {
       format = GL_RG;
     }
-    else if (image.component == 3) {
+    else if (image.component == 3)
+    {
       format = GL_RGB;
     }
 
     GLenum type = GL_UNSIGNED_BYTE;
-    if (image.bits == 16) {
+    if (image.bits == 16)
+    {
       type = GL_UNSIGNED_SHORT;
     }
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-      image.width, image.height, 0, format, type, &image.image[0]);
+                 image.width, image.height, 0, format, type, &image.image[0]);
 
     //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampler.minFilter);
     //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampler.magFilter);
@@ -380,24 +390,27 @@ void set_transform()
   mat_proj = kmuvcl::math::perspective(fovy, aspectRatio, znear, zfar);
 }
 
-void draw_node(const tinygltf::Node& node, kmuvcl::math::mat4f mat_model)
+void draw_node(const tinygltf::Node &node, kmuvcl::math::mat4f mat_model)
 {
-  const std::vector<tinygltf::Node>& nodes = model.nodes;
-  const std::vector<tinygltf::Mesh>& meshes = model.meshes;
+  const std::vector<tinygltf::Node> &nodes = model.nodes;
+  const std::vector<tinygltf::Mesh> &meshes = model.meshes;
 
-  if (node.scale.size() == 3) {
+  if (node.scale.size() == 3)
+  {
     mat_model = mat_model * kmuvcl::math::scale<float>(
-      node.scale[0], node.scale[1], node.scale[2]);
+                                node.scale[0], node.scale[1], node.scale[2]);
   }
 
-  if (node.rotation.size() == 4) {
+  if (node.rotation.size() == 4)
+  {
     mat_model = mat_model * kmuvcl::math::quat2mat(
-      node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
+                                node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
   }
 
-  if (node.translation.size() == 3) {
+  if (node.translation.size() == 3)
+  {
     mat_model = mat_model * kmuvcl::math::translate<float>(
-      node.translation[0], node.translation[1], node.translation[2]);
+                                node.translation[0], node.translation[1], node.translation[2]);
   }
 
   if (node.matrix.size() == 16)
@@ -437,16 +450,16 @@ void draw_node(const tinygltf::Node& node, kmuvcl::math::mat4f mat_model)
   }
 }
 
-void draw_mesh(const tinygltf::Mesh& mesh, const kmuvcl::math::mat4f& mat_model)
+void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
 {
-  const std::vector<tinygltf::Material>& materials = model.materials;
-  const std::vector<tinygltf::Texture>& textures = model.textures;
-  const std::vector<tinygltf::Accessor>& accessors = model.accessors;
-  const std::vector<tinygltf::BufferView>& bufferViews = model.bufferViews;
+  const std::vector<tinygltf::Material> &materials = model.materials;
+  const std::vector<tinygltf::Texture> &textures = model.textures;
+  const std::vector<tinygltf::Accessor> &accessors = model.accessors;
+  const std::vector<tinygltf::BufferView> &bufferViews = model.bufferViews;
 
   glUseProgram(program);
 
-  mat_PVM = mat_proj * mat_view*mat_model;
+  mat_PVM = mat_proj * mat_view * mat_model;
   glUniformMatrix4fv(loc_u_PVM, 1, GL_FALSE, mat_PVM);
   glUniformMatrix4fv(loc_u_M, 1, GL_FALSE, mat_model);
 
@@ -456,17 +469,19 @@ void draw_mesh(const tinygltf::Mesh& mesh, const kmuvcl::math::mat4f& mat_model)
   glUniform3fv(loc_u_view_position_wc, 1, view_position_wc);
   glUniform3fv(loc_u_light_position_wc, 1, light_position_wc);
 
+  glUniform4fv(loc_u_light_ambient, 1, light_ambient);
   glUniform4fv(loc_u_light_diffuse, 1, light_diffuse);
   glUniform4fv(loc_u_light_specular, 1, light_specular);
 
+  glUniform4fv(loc_u_material_ambient, 1, material_ambient);
   glUniform4fv(loc_u_material_specular, 1, material_specular);
   glUniform1f(loc_u_material_shininess, material_shininess);
 
-  for (const tinygltf::Primitive& primitive : mesh.primitives)
+  for (const tinygltf::Primitive &primitive : mesh.primitives)
   {
     if (primitive.material > -1)
     {
-      const tinygltf::Material& material = materials[primitive.material];
+      const tinygltf::Material &material = materials[primitive.material];
       for (const std::pair<std::string, tinygltf::Parameter> parameter : material.values)
       {
         if (parameter.first.compare("baseColorTexture") == 0)
@@ -482,12 +497,12 @@ void draw_mesh(const tinygltf::Mesh& mesh, const kmuvcl::math::mat4f& mat_model)
       }
     }
 
-    for (const std::pair<std::string, int>& attrib : primitive.attributes)
+    for (const std::pair<std::string, int> &attrib : primitive.attributes)
     {
       const int accessor_index = attrib.second;
-      const tinygltf::Accessor& accessor = accessors[accessor_index];
+      const tinygltf::Accessor &accessor = accessors[accessor_index];
 
-      const tinygltf::BufferView& bufferView = bufferViews[accessor.bufferView];
+      const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
       const int byteStride = accessor.ByteStride(bufferView);
 
       if (attrib.first.compare("POSITION") == 0)
@@ -495,39 +510,39 @@ void draw_mesh(const tinygltf::Mesh& mesh, const kmuvcl::math::mat4f& mat_model)
         glBindBuffer(bufferView.target, position_buffer);
         glEnableVertexAttribArray(loc_a_position);
         glVertexAttribPointer(loc_a_position,
-          accessor.type, accessor.componentType,
-          accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
-          BUFFER_OFFSET(accessor.byteOffset));
+                              accessor.type, accessor.componentType,
+                              accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
+                              BUFFER_OFFSET(accessor.byteOffset));
       }
       else if (attrib.first.compare("NORMAL") == 0)
       {
         glBindBuffer(bufferView.target, normal_buffer);
         glEnableVertexAttribArray(loc_a_normal);
         glVertexAttribPointer(loc_a_normal,
-          accessor.type, accessor.componentType,
-          accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
-          BUFFER_OFFSET(accessor.byteOffset));
+                              accessor.type, accessor.componentType,
+                              accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
+                              BUFFER_OFFSET(accessor.byteOffset));
       }
       else if (attrib.first.compare("TEXCOORD_0") == 0)
       {
         glBindBuffer(bufferView.target, texcoord_buffer);
         glEnableVertexAttribArray(loc_a_texcoord);
         glVertexAttribPointer(loc_a_texcoord,
-          accessor.type, accessor.componentType,
-          accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
-          BUFFER_OFFSET(accessor.byteOffset));
+                              accessor.type, accessor.componentType,
+                              accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
+                              BUFFER_OFFSET(accessor.byteOffset));
       }
     }
 
-    const tinygltf::Accessor& index_accessor = accessors[primitive.indices];
-    const tinygltf::BufferView& bufferView = bufferViews[index_accessor.bufferView];
-    
+    const tinygltf::Accessor &index_accessor = accessors[primitive.indices];
+    const tinygltf::BufferView &bufferView = bufferViews[index_accessor.bufferView];
+
     glBindBuffer(bufferView.target, index_buffer);
 
     glDrawElements(primitive.mode,
-      index_accessor.count,
-      index_accessor.componentType,
-      BUFFER_OFFSET(index_accessor.byteOffset));    
+                   index_accessor.count,
+                   index_accessor.componentType,
+                   BUFFER_OFFSET(index_accessor.byteOffset));
 
     // 정점 attribute 배열 비활성화
     glDisableVertexAttribArray(loc_a_texcoord);
@@ -539,16 +554,16 @@ void draw_mesh(const tinygltf::Mesh& mesh, const kmuvcl::math::mat4f& mat_model)
 
 void draw_scene()
 {
-  const std::vector<tinygltf::Node>& nodes = model.nodes;
+  const std::vector<tinygltf::Node> &nodes = model.nodes;
 
   kmuvcl::math::mat4f mat_model;
   mat_model.set_to_identity();
 
-  for (const tinygltf::Scene& scene : model.scenes)
+  for (const tinygltf::Scene &scene : model.scenes)
   {
     for (size_t i = 0; i < scene.nodes.size(); ++i)
     {
-      const tinygltf::Node& node = nodes[scene.nodes[i]];
+      const tinygltf::Node &node = nodes[scene.nodes[i]];
       draw_node(node, mat_model);
     }
   }
@@ -561,7 +576,7 @@ int main(void)
   char dir[] = "BoxTextured/";
   std::cin >> filename;
 
-  GLFWwindow* window;
+  GLFWwindow *window;
 
   // Initialize GLFW library
   if (!glfwInit())
