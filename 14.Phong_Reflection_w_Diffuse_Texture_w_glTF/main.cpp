@@ -54,6 +54,22 @@ inline mat4x4f quat2mat(T x, T y, T z, T w)
   mat_rot(3, 3) = 1.0f;
   return mat_rot;
 }
+
+const float MATH_PI = 3.14159265358979323846f;
+
+template <typename T>
+inline T rad2deg(T deg)
+{
+  T rad = deg * (180.0f / MATH_PI);
+  return rad;
+}
+
+template <typename T>
+inline T deg2rad(T rad)
+{
+  T deg = rad * (MATH_PI / 180.0f);
+  return deg;
+}
 } // namespace math
 } // namespace kmuvcl
 
@@ -98,6 +114,12 @@ kmuvcl::math::mat4x4f mat_view, mat_proj;
 kmuvcl::math::mat4x4f mat_PVM;
 
 void set_transform();
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/// 카메라 관련 변수
+////////////////////////////////////////////////////////////////////////////////
+int camera_index = 0;
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -382,6 +404,58 @@ void init_texture_objects()
 
 void set_transform()
 {
+	const std::vector<tinygltf::Node>& nodes = model.nodes;
+  const std::vector<tinygltf::Camera>& cameras = model.cameras;
+  const tinygltf::Camera& camera = cameras[camera_index];
+
+  if (camera.type.compare("perspective") == 0)
+  {
+    float fovy = kmuvcl::math::rad2deg(camera.perspective.yfov);
+    float aspectRatio = camera.perspective.aspectRatio;
+    float znear = camera.perspective.znear;
+    float zfar = camera.perspective.zfar;
+    /*
+    std::cout << "(camera.mode() == Camera::kPerspective)" << std::endl;
+    std::cout << "(fovy, aspect, n, f): " << fovy << ", " << aspectRatio << ", " << znear << ", " << zfar << std::endl;
+    */
+    mat_proj = kmuvcl::math::perspective(fovy, aspectRatio, znear, zfar);
+  }
+  else // (camera.type.compare("orthographic") == 0)
+  {
+    float xmag = camera.orthographic.xmag;
+    float ymag = camera.orthographic.ymag;
+    float znear = camera.orthographic.znear;
+    float zfar = camera.orthographic.zfar;
+    /*
+    std::cout << "(camera.mode() == Camera::kOrtho)" << std::endl;
+    std::cout << "(xmag, ymag, n, f): " << xmag << ", " << ymag << ", " << znear << ", " << zfar << std::endl;
+    */
+    mat_proj = kmuvcl::math::ortho(-xmag, xmag, -ymag, ymag, znear, zfar);
+  }
+
+  for (const tinygltf::Node& node : nodes)
+  {
+    if (node.camera == camera_index)
+    {
+      mat_view.set_to_identity();
+      if (node.scale.size() == 3) {
+        mat_view = mat_view*kmuvcl::math::scale<float>(
+              1.0f / node.scale[0], 1.0f / node.scale[1], 1.0f / node.scale[2]);
+      }
+
+      if (node.rotation.size() == 4) {
+        mat_view = mat_view*kmuvcl::math::quat2mat(
+              node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]).transpose();
+      }
+
+      if (node.translation.size() == 3) {
+        mat_view = mat_view*kmuvcl::math::translate<float>(
+              -node.translation[0], -node.translation[1], -node.translation[2]);
+      }      
+    }
+  }
+
+  /* 1st Triangle 성공 후 카메라 위해 코드 주석처리
   //mat_view.set_to_identity();
   mat_view = kmuvcl::math::translate(0.0f, 0.0f, -2.0f);
 
@@ -390,8 +464,17 @@ void set_transform()
   float aspectRatio = 1.0f;
   float znear = 0.01f;
   float zfar = 100.0f;
-
+  
   mat_proj = kmuvcl::math::perspective(fovy, aspectRatio, znear, zfar);
+  */
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+	{
+		camera_index = camera_index == 0 ? 1 : 0;
+	}
 }
 
 void draw_node(const tinygltf::Node &node, kmuvcl::math::mat4f mat_model)
