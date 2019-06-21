@@ -141,11 +141,11 @@ kmuvcl::math::vec3f view_position_wc;
 kmuvcl::math::vec3f light_position_wc = kmuvcl::math::vec3f(0.0f, 1.0f, 1.0f);
 kmuvcl::math::vec4f light_ambient = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 kmuvcl::math::vec4f light_diffuse = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
-kmuvcl::math::vec4f light_specular = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
+kmuvcl::math::vec4f light_specular = kmuvcl::math::vec4f(0.2f, 0.2f, 0.2f, 0.2f);
 
 kmuvcl::math::vec4f material_ambient = kmuvcl::math::vec4f(0.3f, 0.0f, 0.0f, 1.0f);
-kmuvcl::math::vec4f material_specular = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
-float material_shininess = 60.0f;
+kmuvcl::math::vec4f material_specular = kmuvcl::math::vec4f(0.2f, 0.2f, 0.2f, 0.2f);
+float material_shininess = 1.3f;
 
 bool load_model(tinygltf::Model &model, const std::string filename);
 void init_buffer_objects(); // VBO init 함수: GPU의 VBO를 초기화하는 함수.
@@ -344,7 +344,7 @@ void init_buffer_objects()
             glBufferData(bufferView.target, bufferView.byteLength,
                          &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
           }
-          /*
+          
           else if (attrib.first.compare("NORMAL") == 0)
           {
             glGenBuffers(1, &normal_buffer);
@@ -352,7 +352,7 @@ void init_buffer_objects()
             glBufferData(bufferView.target, bufferView.byteLength,
                          &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
           }
-          */
+          
           else if (attrib.first.compare("TEXCOORD_0") == 0)
           {
             glGenBuffers(1, &texcoord_buffer);
@@ -617,7 +617,7 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
                               accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
                               BUFFER_OFFSET(accessor.byteOffset));
       }
-      /*
+      
       else if (attrib.first.compare("NORMAL") == 0)
       {
         glBindBuffer(bufferView.target, normal_buffer);
@@ -627,7 +627,7 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
                               accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
                               BUFFER_OFFSET(accessor.byteOffset));
       }
-      */
+      
       else if (attrib.first.compare("TEXCOORD_0") == 0)
       {
         glBindBuffer(bufferView.target, texcoord_buffer);
