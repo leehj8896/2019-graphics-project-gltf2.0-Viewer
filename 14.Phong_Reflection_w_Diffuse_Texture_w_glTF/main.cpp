@@ -309,7 +309,7 @@ void init_buffer_objects()
   {
     for (const tinygltf::Primitive &primitive : mesh.primitives)
     {
-      if (model.cameras.size() > 0)
+      if (model.cameras.size() > 0 || mesh.name.compare("Mesh") == 0)
       {
         const tinygltf::Accessor &accessor = accessors[primitive.indices];
         const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
@@ -489,25 +489,21 @@ void draw_node(const tinygltf::Node &node, kmuvcl::math::mat4f mat_model)
 {
   const std::vector<tinygltf::Node> &nodes = model.nodes;
   const std::vector<tinygltf::Mesh> &meshes = model.meshes;
-
   if (node.scale.size() == 3)
   {
     mat_model = mat_model * kmuvcl::math::scale<float>(
                                 node.scale[0], node.scale[1], node.scale[2]);
   }
-
   if (node.rotation.size() == 4)
   {
     mat_model = mat_model * kmuvcl::math::quat2mat(
                                 node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
   }
-
   if (node.translation.size() == 3)
   {
     mat_model = mat_model * kmuvcl::math::translate<float>(
                                 node.translation[0], node.translation[1], node.translation[2]);
   }
-
   if (node.matrix.size() == 16)
   {
     kmuvcl::math::mat4f mat_node;
@@ -553,25 +549,20 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
   const std::vector<tinygltf::BufferView> &bufferViews = model.bufferViews;
 
   glUseProgram(program);
-
   mat_PVM = mat_proj * mat_view * mat_model;
   glUniformMatrix4fv(loc_u_PVM, 1, GL_FALSE, mat_PVM);
   glUniformMatrix4fv(loc_u_M, 1, GL_FALSE, mat_model);
-
   view_position_wc[0] = mat_view(0, 3);
   view_position_wc[1] = mat_view(1, 3);
   view_position_wc[2] = mat_view(2, 3);
   glUniform3fv(loc_u_view_position_wc, 1, view_position_wc);
   glUniform3fv(loc_u_light_position_wc, 1, light_position_wc);
-
   glUniform4fv(loc_u_light_ambient, 1, light_ambient);
   glUniform4fv(loc_u_light_diffuse, 1, light_diffuse);
   glUniform4fv(loc_u_light_specular, 1, light_specular);
-
   glUniform4fv(loc_u_material_ambient, 1, material_ambient);
   glUniform4fv(loc_u_material_specular, 1, material_specular);
   glUniform1f(loc_u_material_shininess, material_shininess);
-
   for (const tinygltf::Primitive &primitive : mesh.primitives)
   {
     if (primitive.material > -1)
@@ -591,7 +582,6 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
         }
       }
     }
-
     for (const std::pair<std::string, int> &attrib : primitive.attributes)
     {
       const int accessor_index = attrib.second;
@@ -628,12 +618,11 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
                               BUFFER_OFFSET(accessor.byteOffset));
       }
     }
-
     const tinygltf::Accessor &index_accessor = accessors[primitive.indices];
     const tinygltf::BufferView &bufferView = bufferViews[index_accessor.bufferView];
-
-    glBindBuffer(bufferView.target, index_buffer);
-
+    
+    if (model.cameras.size() > 0 || mesh.name.compare("Mesh") == 0)
+      glBindBuffer(bufferView.target, index_buffer);
     glDrawElements(primitive.mode,
                    index_accessor.count,
                    index_accessor.componentType,
@@ -677,55 +666,46 @@ void render_object()
   const std::vector<tinygltf::Accessor> &accessors = model.accessors;
   const std::vector<tinygltf::BufferView> &bufferViews = model.bufferViews;
 
-  /* 
-  // 카메라를 위해 추가
-  for (const tinygltf::Node &node : nodes)
+  if (meshes[0].name.compare("Mesh") == 0)
   {
-    if (node.mesh > -1)
+    std::cout << "Box일 때" << std::endl;
+    // 카메라를 위해 추가
+    for (const tinygltf::Node &node : nodes)
     {
-      mat_model.set_to_identity();
+      if (node.mesh > -1)
+      {
+        mat_model.set_to_identity();
 
-      if (node.translation.size() == 3)
-      {
-        mat_model = mat_model * kmuvcl::math::translate<float>(
-                                    node.translation[0], node.translation[1], node.translation[2]);
-      }
-      if (node.rotation.size() == 4)
-      {
-        mat_model = mat_model * kmuvcl::math::quat2mat(
-                                    node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
-      }
-      if (node.scale.size() == 3)
-      {
-        mat_model = mat_model * kmuvcl::math::scale<float>(
-                                    node.scale[0], node.scale[1], node.scale[2]);
-      }
-
-      mat_PVM = mat_proj * mat_view * mat_model;
-      glUniformMatrix4fv(loc_u_PVM, 1, GL_FALSE, mat_PVM);
- */
-      for (size_t i = 0; i < meshes.size(); ++i)
-      {
-        const tinygltf::Mesh &mesh = meshes[i];
-
-        for (size_t j = 0; j < mesh.primitives.size(); ++j)
+        if (node.translation.size() == 3)
         {
-          const tinygltf::Primitive &primitive = mesh.primitives[j];
+          mat_model = mat_model * kmuvcl::math::translate<float>(
+                                      node.translation[0], node.translation[1], node.translation[2]);
+        }
+        if (node.rotation.size() == 4)
+        {
+          mat_model = mat_model * kmuvcl::math::quat2mat(
+                                      node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
+        }
+        if (node.scale.size() == 3)
+        {
+          mat_model = mat_model * kmuvcl::math::scale<float>(
+                                      node.scale[0], node.scale[1], node.scale[2]);
+        }
 
-          int count = 0;
+        mat_PVM = mat_proj * mat_view * mat_model;
+        glUniformMatrix4fv(loc_u_PVM, 1, GL_FALSE, mat_PVM);
 
-          for (std::map<std::string, int>::const_iterator it = primitive.attributes.cbegin();
-               it != primitive.attributes.cend();
-               ++it)
+        const tinygltf::Mesh &mesh = meshes[node.mesh];
+
+        for (const tinygltf::Primitive &primitive : mesh.primitives)
+        {
+          for (const auto &attrib : primitive.attributes)
           {
-            const std::pair<std::string, int> &attrib = *it;
-
             const int accessor_index = attrib.second;
             const tinygltf::Accessor &accessor = accessors[accessor_index];
 
-            count = accessor.count;
-
             const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+            const int byteStride = accessor.ByteStride(bufferView);
 
             if (attrib.first.compare("POSITION") == 0)
             {
@@ -733,32 +713,72 @@ void render_object()
               glEnableVertexAttribArray(loc_a_position);
               glVertexAttribPointer(loc_a_position,
                                     accessor.type, accessor.componentType,
-                                    accessor.normalized ? GL_TRUE : GL_FALSE, 0,
+                                    accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
                                     BUFFER_OFFSET(accessor.byteOffset));
             }
-            /*
-        else if (attrib.first.compare("COLOR_0") == 0)
-        {
-          glBindBuffer(bufferView.target, color_buffer);
-          glEnableVertexAttribArray(loc_a_color);
-          glVertexAttribPointer(loc_a_color,
-                                accessor.type, accessor.componentType,
-                                accessor.normalized ? GL_TRUE : GL_FALSE, 0,
-                                BUFFER_OFFSET(accessor.byteOffset));
-        }
-        */
           }
-          glDrawArrays(primitive.mode, 0, count);
+
+          const tinygltf::Accessor &index_accessor = accessors[primitive.indices];
+          const tinygltf::BufferView &bufferView = bufferViews[index_accessor.bufferView];
+
+          glBindBuffer(bufferView.target, index_buffer);
+
+          glDrawElements(primitive.mode,
+                         index_accessor.count,
+                         index_accessor.componentType,
+                         BUFFER_OFFSET(index_accessor.byteOffset));
 
           // 정점 attribute 배열 비활성화
           glDisableVertexAttribArray(loc_a_position);
-          //glDisableVertexAttribArray(loc_a_color);
         }
       }
-      // 쉐이더 프로그램 사용해제
-      glUseProgram(0);
-    //}
-  //}
+    }
+  }
+  else
+  {
+    std::cout << "Box 아닐 때" << std::endl;
+    for (size_t i = 0; i < meshes.size(); ++i)
+    {
+      const tinygltf::Mesh &mesh = meshes[i];
+
+      for (size_t j = 0; j < mesh.primitives.size(); ++j)
+      {
+        const tinygltf::Primitive &primitive = mesh.primitives[j];
+
+        int count = 0;
+
+        for (std::map<std::string, int>::const_iterator it = primitive.attributes.cbegin();
+             it != primitive.attributes.cend();
+             ++it)
+        {
+          const std::pair<std::string, int> &attrib = *it;
+
+          const int accessor_index = attrib.second;
+          const tinygltf::Accessor &accessor = accessors[accessor_index];
+
+          count = accessor.count;
+
+          const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+
+          if (attrib.first.compare("POSITION") == 0)
+          {
+            glBindBuffer(bufferView.target, position_buffer);
+            glEnableVertexAttribArray(loc_a_position);
+            glVertexAttribPointer(loc_a_position,
+                                  accessor.type, accessor.componentType,
+                                  accessor.normalized ? GL_TRUE : GL_FALSE, 0,
+                                  BUFFER_OFFSET(accessor.byteOffset));
+          }
+        }
+        glDrawArrays(primitive.mode, 0, count);
+
+        // 정점 attribute 배열 비활성화
+        glDisableVertexAttribArray(loc_a_position);
+      }
+    }
+  }
+  // 쉐이더 프로그램 사용해제
+  glUseProgram(0);
 }
 
 int main(void)
@@ -801,7 +821,6 @@ int main(void)
   // GPU의 VBO를 초기화하는 함수 호출
   init_buffer_objects();
   init_texture_objects();
-
   glfwSetKeyCallback(window, key_callback);
 
   // Loop until the user closes the window
@@ -809,16 +828,15 @@ int main(void)
   {
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     set_transform();
     draw_scene();
+    //if(model.textures.size() == 0)
     render_object();
-
     // Swap front and back buffers
     glfwSwapBuffers(window);
 
     // Poll for and process events
-    glfwPollEvents();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+    glfwPollEvents();
   }
 
   glfwTerminate();
