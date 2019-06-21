@@ -10,6 +10,7 @@ attribute vec2 a_texcoord;    // per-vertex color (per-vertex input)
 varying vec3 v_position_wc;
 varying vec3 v_normal_wc;
 varying vec2 v_texcoord;
+varying vec3 v_color;
 
 void main()
 {

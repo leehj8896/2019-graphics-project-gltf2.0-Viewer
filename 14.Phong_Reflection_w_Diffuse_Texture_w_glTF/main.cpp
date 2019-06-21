@@ -154,6 +154,7 @@ void init_texture_objects();
 void draw_scene();
 void draw_node(const tinygltf::Node &node, kmuvcl::math::mat4f mat_view);
 void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model);
+char filename[30];
 ////////////////////////////////////////////////////////////////////////////////
 
 void init_state()
@@ -312,56 +313,53 @@ void init_buffer_objects()
   {
     for (const tinygltf::Primitive &primitive : mesh.primitives)
     {
-      if (model.cameras.size() > 0 || mesh.name.compare("Mesh") == 0 || mesh.name.compare("Cube") == 0)
-      {
-        const tinygltf::Accessor &accessor = accessors[primitive.indices];
-        const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+        if(primitive.indices > -1)
+        //if (strcmp(filename, "triangleWithoutIndices.gltf") != 0)
+        {
+          const tinygltf::Accessor &accessor = accessors[primitive.indices];
+          const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+          const tinygltf::Buffer &buffer = buffers[bufferView.buffer];        
+          glGenBuffers(1, &index_buffer);
+          glBindBuffer(bufferView.target, index_buffer);
+          glBufferData(bufferView.target, bufferView.byteLength,
+                       &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+        }
+        for (const auto &attrib : primitive.attributes)
+        {
+          const tinygltf::Accessor &accessor = accessors[attrib.second];
+          const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+          const tinygltf::Buffer &buffer = buffers[bufferView.buffer];
+          if (attrib.first.compare("POSITION") == 0)
+          {
+            glGenBuffers(1, &position_buffer);
+            glBindBuffer(bufferView.target, position_buffer);
+            glBufferData(bufferView.target, bufferView.byteLength,
+                         &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+          }
 
-        std::cout << "66666666666666666" << std::endl;
-        const tinygltf::Buffer &buffer = buffers[bufferView.buffer];
-        std::cout << "77777777777777777777777" << std::endl;
-
-        glGenBuffers(1, &index_buffer);
-        glBindBuffer(bufferView.target, index_buffer);
-        glBufferData(bufferView.target, bufferView.byteLength,
-                     &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
-        std::cout << "888888888888888888" << std::endl;
-      }
-      for (const auto &attrib : primitive.attributes)
-      {
-        const tinygltf::Accessor &accessor = accessors[attrib.second];
-        const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
-        const tinygltf::Buffer &buffer = buffers[bufferView.buffer];
-        if (attrib.first.compare("POSITION") == 0)
-        {
-          glGenBuffers(1, &position_buffer);
-          glBindBuffer(bufferView.target, position_buffer);
-          glBufferData(bufferView.target, bufferView.byteLength,
-                       &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
-        }
-        
-        else if (attrib.first.compare("COLOR_0") == 0)
-        {
-          glGenBuffers(1, &normal_buffer);
-          glBindBuffer(bufferView.target, normal_buffer);
-          glBufferData(bufferView.target, bufferView.byteLength,
-                       &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
-        }
-        
-        else if (attrib.first.compare("NORMAL") == 0)
-        {
-          glGenBuffers(1, &normal_buffer);
-          glBindBuffer(bufferView.target, normal_buffer);
-          glBufferData(bufferView.target, bufferView.byteLength,
-                       &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
-        }
-        else if (attrib.first.compare("TEXCOORD_0") == 0)
-        {
-          glGenBuffers(1, &texcoord_buffer);
-          glBindBuffer(bufferView.target, texcoord_buffer);
-          glBufferData(bufferView.target, bufferView.byteLength,
-                       &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
-        }
+          else if (attrib.first.compare("COLOR_0") == 0)
+          {
+            glGenBuffers(1, &normal_buffer);
+            glBindBuffer(bufferView.target, normal_buffer);
+            glBufferData(bufferView.target, bufferView.byteLength,
+                         &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+          }
+          /*
+          else if (attrib.first.compare("NORMAL") == 0)
+          {
+            glGenBuffers(1, &normal_buffer);
+            glBindBuffer(bufferView.target, normal_buffer);
+            glBufferData(bufferView.target, bufferView.byteLength,
+                         &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+          }
+          */
+          else if (attrib.first.compare("TEXCOORD_0") == 0)
+          {
+            glGenBuffers(1, &texcoord_buffer);
+            glBindBuffer(bufferView.target, texcoord_buffer);
+            glBufferData(bufferView.target, bufferView.byteLength,
+                         &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+          }
       }
     }
   }
@@ -410,7 +408,6 @@ void init_texture_objects()
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, sampler.wrapS);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, sampler.wrapT);
-
     //glGenerateMipmap(GL_TEXTURE_2D);
   }
 }
@@ -477,7 +474,7 @@ void set_transform()
   else
   {
     //mat_view.set_to_identity();
-    mat_view = kmuvcl::math::translate(0.0f, 0.0f, -2.0f);
+    mat_view = kmuvcl::math::translate(-1.3f, -1.3f, -4.0f);
 
     //mat_proj.set_to_identity();
     float fovy = 70.0f;
@@ -501,6 +498,7 @@ void draw_node(const tinygltf::Node &node, kmuvcl::math::mat4f mat_model)
 {
   const std::vector<tinygltf::Node> &nodes = model.nodes;
   const std::vector<tinygltf::Mesh> &meshes = model.meshes;
+
   if (node.scale.size() == 3)
   {
     mat_model = mat_model * kmuvcl::math::scale<float>(
@@ -543,14 +541,10 @@ void draw_node(const tinygltf::Node &node, kmuvcl::math::mat4f mat_model)
   }
 
   if (node.mesh > -1)
-  {
     draw_mesh(meshes[node.mesh], mat_model);
-  }
-
+  
   for (size_t i = 0; i < node.children.size(); ++i)
-  {
     draw_node(nodes[node.children[i]], mat_model);
-  }
 }
 
 void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
@@ -614,7 +608,6 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
                               accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
                               BUFFER_OFFSET(accessor.byteOffset));
       }
-      
       else if (attrib.first.compare("COLOR_0") == 0)
       {
         glBindBuffer(bufferView.target, normal_buffer);
@@ -624,7 +617,7 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
                               accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
                               BUFFER_OFFSET(accessor.byteOffset));
       }
-      
+      /*
       else if (attrib.first.compare("NORMAL") == 0)
       {
         glBindBuffer(bufferView.target, normal_buffer);
@@ -634,6 +627,7 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
                               accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
                               BUFFER_OFFSET(accessor.byteOffset));
       }
+      */
       else if (attrib.first.compare("TEXCOORD_0") == 0)
       {
         glBindBuffer(bufferView.target, texcoord_buffer);
@@ -644,11 +638,12 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
                               BUFFER_OFFSET(accessor.byteOffset));
       }
     }
-    const tinygltf::Accessor &index_accessor = accessors[primitive.indices];
-    const tinygltf::BufferView &bufferView = bufferViews[index_accessor.bufferView];
-
-    if (model.cameras.size() > 0 || mesh.name.compare("Mesh") == 0)
+    if(primitive.indices > -1)
+    //if (strcmp(filename, "triangleWithoutIndices.gltf") != 0)
     {
+      const tinygltf::Accessor &index_accessor = accessors[primitive.indices];
+      const tinygltf::BufferView &bufferView = bufferViews[index_accessor.bufferView];
+      //std::cout << index_accessor.count << std::endl;
       glBindBuffer(bufferView.target, index_buffer);
       glDrawElements(primitive.mode,
                      index_accessor.count,
@@ -676,10 +671,8 @@ void draw_scene()
   kmuvcl::math::mat4f mat_model;
   mat_model.set_to_identity();
 
-  // scences 순환
   for (const tinygltf::Scene &scene : model.scenes)
   {
-    // 노드 순환
     for (size_t i = 0; i < scene.nodes.size(); ++i)
     {
       const tinygltf::Node &node = nodes[scene.nodes[i]];
@@ -838,7 +831,6 @@ void render_object()
 */
 int main(void)
 {
-  char filename[30];
   std::cout << "파일 이름 입력: ";
   char dir[] = "BoxTextured/";
   std::cin >> filename;
