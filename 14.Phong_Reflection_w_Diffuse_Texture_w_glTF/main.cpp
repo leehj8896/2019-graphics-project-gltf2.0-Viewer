@@ -28,7 +28,7 @@ inline mat4x4f quat2mat(T x, T y, T z, T w)
 {
   T xx = x * x;
   T xy = x * y;
-  T xz = x * z;
+  T xz = x * z; 
   T xw = x * w;
 
   T yy = y * y;
@@ -84,6 +84,7 @@ void init_state();
 ////////////////////////////////////////////////////////////////////////////////
 GLuint program; // 쉐이더 프로그램 객체의 레퍼런스 값
 GLint loc_a_position;
+//GLint loc_a_color;
 GLint loc_a_normal;
 GLint loc_a_texcoord;
 
@@ -127,6 +128,7 @@ int camera_index = 0;
 ////////////////////////////////////////////////////////////////////////////////
 tinygltf::Model model;
 
+//GLuint color_buffer;
 GLuint position_buffer;
 GLuint normal_buffer;
 GLuint texcoord_buffer;
@@ -263,6 +265,7 @@ void init_shader_program()
   loc_u_diffuse_texture = glGetUniformLocation(program, "u_diffuse_texture");
 
   loc_a_position = glGetAttribLocation(program, "a_position");
+  //loc_a_color = glGetAttribLocation(program, "a_color");
   loc_a_normal = glGetAttribLocation(program, "a_normal");
   loc_a_texcoord = glGetAttribLocation(program, "a_texcoord");
 }
@@ -309,7 +312,7 @@ void init_buffer_objects()
   {
     for (const tinygltf::Primitive &primitive : mesh.primitives)
     {
-      if (model.cameras.size() > 0 || mesh.name.compare("Mesh") == 0)
+      if (model.cameras.size() > 0 || mesh.name.compare("Mesh") == 0 || mesh.name.compare("Cube") == 0)
       {
         const tinygltf::Accessor &accessor = accessors[primitive.indices];
         const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
@@ -336,6 +339,15 @@ void init_buffer_objects()
           glBufferData(bufferView.target, bufferView.byteLength,
                        &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
         }
+        
+        else if (attrib.first.compare("COLOR_0") == 0)
+        {
+          glGenBuffers(1, &normal_buffer);
+          glBindBuffer(bufferView.target, normal_buffer);
+          glBufferData(bufferView.target, bufferView.byteLength,
+                       &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+        }
+        
         else if (attrib.first.compare("NORMAL") == 0)
         {
           glGenBuffers(1, &normal_buffer);
@@ -582,10 +594,13 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
         }
       }
     }
+    int count = 0;
     for (const std::pair<std::string, int> &attrib : primitive.attributes)
     {
       const int accessor_index = attrib.second;
       const tinygltf::Accessor &accessor = accessors[accessor_index];
+
+      count = accessor.count;
 
       const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
       const int byteStride = accessor.ByteStride(bufferView);
@@ -599,6 +614,17 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
                               accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
                               BUFFER_OFFSET(accessor.byteOffset));
       }
+      
+      else if (attrib.first.compare("COLOR_0") == 0)
+      {
+        glBindBuffer(bufferView.target, normal_buffer);
+        glEnableVertexAttribArray(loc_a_normal);
+        glVertexAttribPointer(loc_a_normal,
+                              accessor.type, accessor.componentType,
+                              accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
+                              BUFFER_OFFSET(accessor.byteOffset));
+      }
+      
       else if (attrib.first.compare("NORMAL") == 0)
       {
         glBindBuffer(bufferView.target, normal_buffer);
@@ -620,17 +646,24 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
     }
     const tinygltf::Accessor &index_accessor = accessors[primitive.indices];
     const tinygltf::BufferView &bufferView = bufferViews[index_accessor.bufferView];
-    
+
     if (model.cameras.size() > 0 || mesh.name.compare("Mesh") == 0)
+    {
       glBindBuffer(bufferView.target, index_buffer);
-    glDrawElements(primitive.mode,
-                   index_accessor.count,
-                   index_accessor.componentType,
-                   BUFFER_OFFSET(index_accessor.byteOffset));
+      glDrawElements(primitive.mode,
+                     index_accessor.count,
+                     index_accessor.componentType,
+                     BUFFER_OFFSET(index_accessor.byteOffset));
+    }
+    else
+    {
+      glDrawArrays(primitive.mode, 0, count);
+    }
 
     // 정점 attribute 배열 비활성화
     glDisableVertexAttribArray(loc_a_texcoord);
     glDisableVertexAttribArray(loc_a_normal);
+    //glDisableVertexAttribArray(loc_a_color);
     glDisableVertexAttribArray(loc_a_position);
   }
   glUseProgram(0);
@@ -666,9 +699,8 @@ void render_object()
   const std::vector<tinygltf::Accessor> &accessors = model.accessors;
   const std::vector<tinygltf::BufferView> &bufferViews = model.bufferViews;
 
-  if (meshes[0].name.compare("Mesh") == 0)
+  if (meshes[0].name.compare("Mesh") == 0 || meshes[0].name.compare("Cube") == 0)
   {
-    std::cout << "Box일 때" << std::endl;
     // 카메라를 위해 추가
     for (const tinygltf::Node &node : nodes)
     {
@@ -716,6 +748,17 @@ void render_object()
                                     accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
                                     BUFFER_OFFSET(accessor.byteOffset));
             }
+            
+            else if (attrib.first.compare("COLOR_0") == 0)
+            {
+              glBindBuffer(bufferView.target, normal_buffer);
+              glEnableVertexAttribArray(loc_a_normal);
+              glVertexAttribPointer(loc_a_normal,
+                                    accessor.type, accessor.componentType,
+                                    accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
+                                    BUFFER_OFFSET(accessor.byteOffset));
+            }
+            
           }
 
           const tinygltf::Accessor &index_accessor = accessors[primitive.indices];
@@ -730,13 +773,13 @@ void render_object()
 
           // 정점 attribute 배열 비활성화
           glDisableVertexAttribArray(loc_a_position);
+          //glDisableVertexAttribArray(loc_a_color);
         }
       }
     }
   }
   else
   {
-    std::cout << "Box 아닐 때" << std::endl;
     for (size_t i = 0; i < meshes.size(); ++i)
     {
       const tinygltf::Mesh &mesh = meshes[i];
@@ -769,11 +812,23 @@ void render_object()
                                   accessor.normalized ? GL_TRUE : GL_FALSE, 0,
                                   BUFFER_OFFSET(accessor.byteOffset));
           }
+          
+          else if (attrib.first.compare("COLOR_0") == 0)
+          {
+            glBindBuffer(bufferView.target, normal_buffer);
+            glEnableVertexAttribArray(loc_a_normal);
+            glVertexAttribPointer(loc_a_normal,
+                                  accessor.type, accessor.componentType,
+                                  accessor.normalized ? GL_TRUE : GL_FALSE, 0,
+                                  BUFFER_OFFSET(accessor.byteOffset));
+          }
+          
         }
         glDrawArrays(primitive.mode, 0, count);
 
         // 정점 attribute 배열 비활성화
         glDisableVertexAttribArray(loc_a_position);
+        glDisableVertexAttribArray(loc_a_normal);
       }
     }
   }
@@ -831,7 +886,7 @@ int main(void)
     set_transform();
     draw_scene();
     //if(model.textures.size() == 0)
-    render_object();
+    //render_object();
     // Swap front and back buffers
     glfwSwapBuffers(window);
 

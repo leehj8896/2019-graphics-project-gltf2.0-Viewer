@@ -15,8 +15,8 @@ void main()
 {
   gl_Position   = u_PVM * vec4(a_position, 1.0f);
   
-  v_position_wc = (u_M * vec4(a_position, 1)).xyz;;
-  v_normal_wc   = normalize(u_M * vec4(a_normal, 0)).xyz;;
+  v_position_wc = (u_M * vec4(a_position, 1)).xyz;
+  v_normal_wc   = normalize(u_M * vec4(a_normal, 0)).xyz;
   
   v_texcoord    = a_texcoord;
 }
