@@ -309,20 +309,21 @@ void init_buffer_objects()
   {
     for (const tinygltf::Primitive &primitive : mesh.primitives)
     {
+      if (model.cameras.size() > 0)
+      {
+        const tinygltf::Accessor &accessor = accessors[primitive.indices];
+        const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
 
-      const tinygltf::Accessor &accessor = accessors[primitive.indices];
-      const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+        std::cout << "66666666666666666" << std::endl;
+        const tinygltf::Buffer &buffer = buffers[bufferView.buffer];
+        std::cout << "77777777777777777777777" << std::endl;
 
-      std::cout << "66666666666666666" << std::endl;
-      const tinygltf::Buffer &buffer = buffers[bufferView.buffer];
-      std::cout << "77777777777777777777777" << std::endl;
-
-      glGenBuffers(1, &index_buffer);
-      glBindBuffer(bufferView.target, index_buffer);
-      glBufferData(bufferView.target, bufferView.byteLength,
-                   &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
-      std::cout << "888888888888888888" << std::endl;
-
+        glGenBuffers(1, &index_buffer);
+        glBindBuffer(bufferView.target, index_buffer);
+        glBufferData(bufferView.target, bufferView.byteLength,
+                     &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+        std::cout << "888888888888888888" << std::endl;
+      }
       for (const auto &attrib : primitive.attributes)
       {
         const tinygltf::Accessor &accessor = accessors[attrib.second];
