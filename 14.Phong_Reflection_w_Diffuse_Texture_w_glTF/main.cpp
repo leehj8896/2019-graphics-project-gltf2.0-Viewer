@@ -687,7 +687,7 @@ void draw_scene()
     }
   }
 }
-
+/*
 // object rendering: 현재 scene은 삼각형 하나로 구성되어 있음.
 void render_object()
 {
@@ -835,7 +835,7 @@ void render_object()
   // 쉐이더 프로그램 사용해제
   glUseProgram(0);
 }
-
+*/
 int main(void)
 {
   char filename[30];
