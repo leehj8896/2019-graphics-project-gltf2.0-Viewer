@@ -119,7 +119,7 @@ kmuvcl::math::vec4f light_ambient = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 kmuvcl::math::vec4f light_diffuse = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 kmuvcl::math::vec4f light_specular = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 
-kmuvcl::math::vec4f material_ambient = kmuvcl::math::vec4f(0.0f, 0.0f, 0.0f, 1.0f);
+kmuvcl::math::vec4f material_ambient = kmuvcl::math::vec4f(1.0f, 0.0f, 0.0f, 1.0f);
 kmuvcl::math::vec4f material_specular = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 float material_shininess = 60.0f;
 
@@ -287,21 +287,25 @@ void init_buffer_objects()
   {
     for (const tinygltf::Primitive &primitive : mesh.primitives)
     {
+      
       const tinygltf::Accessor &accessor = accessors[primitive.indices];
       const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+
+      std::cout << "66666666666666666" << std::endl;
       const tinygltf::Buffer &buffer = buffers[bufferView.buffer];
+      std::cout << "77777777777777777777777" << std::endl;
 
       glGenBuffers(1, &index_buffer);
       glBindBuffer(bufferView.target, index_buffer);
       glBufferData(bufferView.target, bufferView.byteLength,
                    &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
-
+      std::cout << "888888888888888888" << std::endl;
+      
       for (const auto &attrib : primitive.attributes)
       {
         const tinygltf::Accessor &accessor = accessors[attrib.second];
         const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
         const tinygltf::Buffer &buffer = buffers[bufferView.buffer];
-
         if (attrib.first.compare("POSITION") == 0)
         {
           glGenBuffers(1, &position_buffer);
@@ -559,14 +563,83 @@ void draw_scene()
   kmuvcl::math::mat4f mat_model;
   mat_model.set_to_identity();
 
+  // scences 순환
   for (const tinygltf::Scene &scene : model.scenes)
   {
+    // 노드 순환
     for (size_t i = 0; i < scene.nodes.size(); ++i)
     {
       const tinygltf::Node &node = nodes[scene.nodes[i]];
       draw_node(node, mat_model);
     }
   }
+}
+
+// object rendering: 현재 scene은 삼각형 하나로 구성되어 있음.
+void render_object()
+{
+  // 특정 쉐이더 프로그램 사용
+  glUseProgram(program);
+
+  const std::vector<tinygltf::Mesh> &meshes = model.meshes;
+  const std::vector<tinygltf::Accessor> &accessors = model.accessors;
+  const std::vector<tinygltf::BufferView> &bufferViews = model.bufferViews;
+
+  for (size_t i = 0; i < meshes.size(); ++i)
+  {
+    const tinygltf::Mesh &mesh = meshes[i];
+
+    for (size_t j = 0; j < mesh.primitives.size(); ++j)
+    {
+      const tinygltf::Primitive &primitive = mesh.primitives[j];
+
+      int count = 0;
+
+      for (std::map<std::string, int>::const_iterator it = primitive.attributes.cbegin();
+           it != primitive.attributes.cend();
+           ++it)
+      {
+        const std::pair<std::string, int> &attrib = *it;
+
+        const int accessor_index = attrib.second;
+        const tinygltf::Accessor &accessor = accessors[accessor_index];
+
+        count = accessor.count;
+
+        const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+
+        if (attrib.first.compare("POSITION") == 0)
+        {
+          glBindBuffer(bufferView.target, position_buffer);
+          glEnableVertexAttribArray(loc_a_position);
+          glVertexAttribPointer(loc_a_position,
+                                accessor.type, accessor.componentType,
+                                accessor.normalized ? GL_TRUE : GL_FALSE, 0,
+                                BUFFER_OFFSET(accessor.byteOffset));
+        }
+        /*
+        else if (attrib.first.compare("COLOR_0") == 0)
+        {
+          glBindBuffer(bufferView.target, color_buffer);
+          glEnableVertexAttribArray(loc_a_color);
+          glVertexAttribPointer(loc_a_color,
+                                accessor.type, accessor.componentType,
+                                accessor.normalized ? GL_TRUE : GL_FALSE, 0,
+                                BUFFER_OFFSET(accessor.byteOffset));
+        }
+        */
+      }
+
+      glDrawArrays(primitive.mode, 0, count);
+
+      // 정점 attribute 배열 비활성화
+      glDisableVertexAttribArray(loc_a_position);
+      //glDisableVertexAttribArray(loc_a_color);
+    }
+  }
+
+  // 쉐이더 프로그램 사용해제
+  glUseProgram(0);
 }
 
 int main(void)
@@ -618,6 +691,7 @@ int main(void)
 
     set_transform();
     draw_scene();
+    render_object();
 
     // Swap front and back buffers
     glfwSwapBuffers(window);
