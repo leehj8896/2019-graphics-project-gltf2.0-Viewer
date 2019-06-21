@@ -110,7 +110,7 @@ void init_shader_program();
 ////////////////////////////////////////////////////////////////////////////////
 /// 변환 관련 변수 및 함수
 ////////////////////////////////////////////////////////////////////////////////
-kmuvcl::math::mat4x4f mat_view, mat_proj;
+kmuvcl::math::mat4x4f mat_model, mat_view, mat_proj;
 kmuvcl::math::mat4x4f mat_PVM;
 
 void set_transform();
@@ -141,7 +141,7 @@ kmuvcl::math::vec4f light_ambient = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 kmuvcl::math::vec4f light_diffuse = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 kmuvcl::math::vec4f light_specular = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 
-kmuvcl::math::vec4f material_ambient = kmuvcl::math::vec4f(1.0f, 0.0f, 0.0f, 1.0f);
+kmuvcl::math::vec4f material_ambient = kmuvcl::math::vec4f(0.3f, 0.0f, 0.0f, 1.0f);
 kmuvcl::math::vec4f material_specular = kmuvcl::math::vec4f(1.0f, 1.0f, 1.0f, 1.0f);
 float material_shininess = 60.0f;
 
@@ -309,7 +309,7 @@ void init_buffer_objects()
   {
     for (const tinygltf::Primitive &primitive : mesh.primitives)
     {
-      
+
       const tinygltf::Accessor &accessor = accessors[primitive.indices];
       const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
 
@@ -322,7 +322,7 @@ void init_buffer_objects()
       glBufferData(bufferView.target, bufferView.byteLength,
                    &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
       std::cout << "888888888888888888" << std::endl;
-      
+
       for (const auto &attrib : primitive.attributes)
       {
         const tinygltf::Accessor &accessor = accessors[attrib.second];
@@ -404,77 +404,84 @@ void init_texture_objects()
 
 void set_transform()
 {
-	const std::vector<tinygltf::Node>& nodes = model.nodes;
-  const std::vector<tinygltf::Camera>& cameras = model.cameras;
-  const tinygltf::Camera& camera = cameras[camera_index];
+  const std::vector<tinygltf::Node> &nodes = model.nodes;
+  const std::vector<tinygltf::Camera> &cameras = model.cameras;
+  const tinygltf::Camera &camera = cameras[camera_index];
 
-  if (camera.type.compare("perspective") == 0)
+  if (model.cameras.size() > 0)
   {
-    float fovy = kmuvcl::math::rad2deg(camera.perspective.yfov);
-    float aspectRatio = camera.perspective.aspectRatio;
-    float znear = camera.perspective.znear;
-    float zfar = camera.perspective.zfar;
-    /*
+    if (camera.type.compare("perspective") == 0)
+    {
+      float fovy = kmuvcl::math::rad2deg(camera.perspective.yfov);
+      float aspectRatio = camera.perspective.aspectRatio;
+      float znear = camera.perspective.znear;
+      float zfar = camera.perspective.zfar;
+      /*
     std::cout << "(camera.mode() == Camera::kPerspective)" << std::endl;
     std::cout << "(fovy, aspect, n, f): " << fovy << ", " << aspectRatio << ", " << znear << ", " << zfar << std::endl;
     */
-    mat_proj = kmuvcl::math::perspective(fovy, aspectRatio, znear, zfar);
-  }
-  else // (camera.type.compare("orthographic") == 0)
-  {
-    float xmag = camera.orthographic.xmag;
-    float ymag = camera.orthographic.ymag;
-    float znear = camera.orthographic.znear;
-    float zfar = camera.orthographic.zfar;
-    /*
+      mat_proj = kmuvcl::math::perspective(fovy, aspectRatio, znear, zfar);
+    }
+    else // (camera.type.compare("orthographic") == 0)
+    {
+      float xmag = camera.orthographic.xmag;
+      float ymag = camera.orthographic.ymag;
+      float znear = camera.orthographic.znear;
+      float zfar = camera.orthographic.zfar;
+      /*
     std::cout << "(camera.mode() == Camera::kOrtho)" << std::endl;
     std::cout << "(xmag, ymag, n, f): " << xmag << ", " << ymag << ", " << znear << ", " << zfar << std::endl;
     */
-    mat_proj = kmuvcl::math::ortho(-xmag, xmag, -ymag, ymag, znear, zfar);
-  }
+      mat_proj = kmuvcl::math::ortho(-xmag, xmag, -ymag, ymag, znear, zfar);
+    }
 
-  for (const tinygltf::Node& node : nodes)
-  {
-    if (node.camera == camera_index)
+    for (const tinygltf::Node &node : nodes)
     {
-      mat_view.set_to_identity();
-      if (node.scale.size() == 3) {
-        mat_view = mat_view*kmuvcl::math::scale<float>(
-              1.0f / node.scale[0], 1.0f / node.scale[1], 1.0f / node.scale[2]);
-      }
+      if (node.camera == camera_index)
+      {
+        mat_view.set_to_identity();
+        if (node.scale.size() == 3)
+        {
+          mat_view = mat_view * kmuvcl::math::scale<float>(
+                                    1.0f / node.scale[0], 1.0f / node.scale[1], 1.0f / node.scale[2]);
+        }
 
-      if (node.rotation.size() == 4) {
-        mat_view = mat_view*kmuvcl::math::quat2mat(
-              node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]).transpose();
-      }
+        if (node.rotation.size() == 4)
+        {
+          mat_view = mat_view * kmuvcl::math::quat2mat(
+                                    node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3])
+                                    .transpose();
+        }
 
-      if (node.translation.size() == 3) {
-        mat_view = mat_view*kmuvcl::math::translate<float>(
-              -node.translation[0], -node.translation[1], -node.translation[2]);
-      }      
+        if (node.translation.size() == 3)
+        {
+          mat_view = mat_view * kmuvcl::math::translate<float>(
+                                    -node.translation[0], -node.translation[1], -node.translation[2]);
+        }
+      }
     }
   }
+  else
+  {
+    //mat_view.set_to_identity();
+    mat_view = kmuvcl::math::translate(0.0f, 0.0f, -2.0f);
 
-  /* 1st Triangle 성공 후 카메라 위해 코드 주석처리
-  //mat_view.set_to_identity();
-  mat_view = kmuvcl::math::translate(0.0f, 0.0f, -2.0f);
+    //mat_proj.set_to_identity();
+    float fovy = 70.0f;
+    float aspectRatio = 1.0f;
+    float znear = 0.01f;
+    float zfar = 100.0f;
 
-  //mat_proj.set_to_identity();
-  float fovy = 70.0f;
-  float aspectRatio = 1.0f;
-  float znear = 0.01f;
-  float zfar = 100.0f;
-  
-  mat_proj = kmuvcl::math::perspective(fovy, aspectRatio, znear, zfar);
-  */
+    mat_proj = kmuvcl::math::perspective(fovy, aspectRatio, znear, zfar);
+  }
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-	if (key == GLFW_KEY_Q && action == GLFW_PRESS)
-	{
-		camera_index = camera_index == 0 ? 1 : 0;
-	}
+  if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+  {
+    camera_index = camera_index == 0 ? 1 : 0;
+  }
 }
 
 void draw_node(const tinygltf::Node &node, kmuvcl::math::mat4f mat_model)
@@ -664,43 +671,71 @@ void render_object()
   // 특정 쉐이더 프로그램 사용
   glUseProgram(program);
 
+  const std::vector<tinygltf::Node> &nodes = model.nodes;
   const std::vector<tinygltf::Mesh> &meshes = model.meshes;
   const std::vector<tinygltf::Accessor> &accessors = model.accessors;
   const std::vector<tinygltf::BufferView> &bufferViews = model.bufferViews;
 
-  for (size_t i = 0; i < meshes.size(); ++i)
+  /* 
+  // 카메라를 위해 추가
+  for (const tinygltf::Node &node : nodes)
   {
-    const tinygltf::Mesh &mesh = meshes[i];
-
-    for (size_t j = 0; j < mesh.primitives.size(); ++j)
+    if (node.mesh > -1)
     {
-      const tinygltf::Primitive &primitive = mesh.primitives[j];
+      mat_model.set_to_identity();
 
-      int count = 0;
-
-      for (std::map<std::string, int>::const_iterator it = primitive.attributes.cbegin();
-           it != primitive.attributes.cend();
-           ++it)
+      if (node.translation.size() == 3)
       {
-        const std::pair<std::string, int> &attrib = *it;
+        mat_model = mat_model * kmuvcl::math::translate<float>(
+                                    node.translation[0], node.translation[1], node.translation[2]);
+      }
+      if (node.rotation.size() == 4)
+      {
+        mat_model = mat_model * kmuvcl::math::quat2mat(
+                                    node.rotation[0], node.rotation[1], node.rotation[2], node.rotation[3]);
+      }
+      if (node.scale.size() == 3)
+      {
+        mat_model = mat_model * kmuvcl::math::scale<float>(
+                                    node.scale[0], node.scale[1], node.scale[2]);
+      }
 
-        const int accessor_index = attrib.second;
-        const tinygltf::Accessor &accessor = accessors[accessor_index];
+      mat_PVM = mat_proj * mat_view * mat_model;
+      glUniformMatrix4fv(loc_u_PVM, 1, GL_FALSE, mat_PVM);
+ */
+      for (size_t i = 0; i < meshes.size(); ++i)
+      {
+        const tinygltf::Mesh &mesh = meshes[i];
 
-        count = accessor.count;
-
-        const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
-
-        if (attrib.first.compare("POSITION") == 0)
+        for (size_t j = 0; j < mesh.primitives.size(); ++j)
         {
-          glBindBuffer(bufferView.target, position_buffer);
-          glEnableVertexAttribArray(loc_a_position);
-          glVertexAttribPointer(loc_a_position,
-                                accessor.type, accessor.componentType,
-                                accessor.normalized ? GL_TRUE : GL_FALSE, 0,
-                                BUFFER_OFFSET(accessor.byteOffset));
-        }
-        /*
+          const tinygltf::Primitive &primitive = mesh.primitives[j];
+
+          int count = 0;
+
+          for (std::map<std::string, int>::const_iterator it = primitive.attributes.cbegin();
+               it != primitive.attributes.cend();
+               ++it)
+          {
+            const std::pair<std::string, int> &attrib = *it;
+
+            const int accessor_index = attrib.second;
+            const tinygltf::Accessor &accessor = accessors[accessor_index];
+
+            count = accessor.count;
+
+            const tinygltf::BufferView &bufferView = bufferViews[accessor.bufferView];
+
+            if (attrib.first.compare("POSITION") == 0)
+            {
+              glBindBuffer(bufferView.target, position_buffer);
+              glEnableVertexAttribArray(loc_a_position);
+              glVertexAttribPointer(loc_a_position,
+                                    accessor.type, accessor.componentType,
+                                    accessor.normalized ? GL_TRUE : GL_FALSE, 0,
+                                    BUFFER_OFFSET(accessor.byteOffset));
+            }
+            /*
         else if (attrib.first.compare("COLOR_0") == 0)
         {
           glBindBuffer(bufferView.target, color_buffer);
@@ -711,18 +746,18 @@ void render_object()
                                 BUFFER_OFFSET(accessor.byteOffset));
         }
         */
+          }
+          glDrawArrays(primitive.mode, 0, count);
+
+          // 정점 attribute 배열 비활성화
+          glDisableVertexAttribArray(loc_a_position);
+          //glDisableVertexAttribArray(loc_a_color);
+        }
       }
-
-      glDrawArrays(primitive.mode, 0, count);
-
-      // 정점 attribute 배열 비활성화
-      glDisableVertexAttribArray(loc_a_position);
-      //glDisableVertexAttribArray(loc_a_color);
-    }
-  }
-
-  // 쉐이더 프로그램 사용해제
-  glUseProgram(0);
+      // 쉐이더 프로그램 사용해제
+      glUseProgram(0);
+    //}
+  //}
 }
 
 int main(void)
@@ -766,6 +801,8 @@ int main(void)
   init_buffer_objects();
   init_texture_objects();
 
+  glfwSetKeyCallback(window, key_callback);
+
   // Loop until the user closes the window
   while (!glfwWindowShouldClose(window))
   {
@@ -780,7 +817,7 @@ int main(void)
     glfwSwapBuffers(window);
 
     // Poll for and process events
-    glfwPollEvents();
+    glfwPollEvents();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
   }
 
   glfwTerminate();
