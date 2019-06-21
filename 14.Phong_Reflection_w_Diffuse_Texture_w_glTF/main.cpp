@@ -84,7 +84,7 @@ void init_state();
 ////////////////////////////////////////////////////////////////////////////////
 GLuint program; // 쉐이더 프로그램 객체의 레퍼런스 값
 GLint loc_a_position;
-//GLint loc_a_color;
+GLint loc_a_color;
 GLint loc_a_normal;
 GLint loc_a_texcoord;
 
@@ -128,7 +128,7 @@ int camera_index = 0;
 ////////////////////////////////////////////////////////////////////////////////
 tinygltf::Model model;
 
-//GLuint color_buffer;
+GLuint color_buffer;
 GLuint position_buffer;
 GLuint normal_buffer;
 GLuint texcoord_buffer;
@@ -266,7 +266,7 @@ void init_shader_program()
   loc_u_diffuse_texture = glGetUniformLocation(program, "u_diffuse_texture");
 
   loc_a_position = glGetAttribLocation(program, "a_position");
-  //loc_a_color = glGetAttribLocation(program, "a_color");
+  loc_a_color = glGetAttribLocation(program, "a_color");
   loc_a_normal = glGetAttribLocation(program, "a_normal");
   loc_a_texcoord = glGetAttribLocation(program, "a_texcoord");
 }
@@ -339,8 +339,8 @@ void init_buffer_objects()
 
           else if (attrib.first.compare("COLOR_0") == 0)
           {
-            glGenBuffers(1, &normal_buffer);
-            glBindBuffer(bufferView.target, normal_buffer);
+            glGenBuffers(1, &color_buffer);
+            glBindBuffer(bufferView.target, color_buffer);
             glBufferData(bufferView.target, bufferView.byteLength,
                          &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
           }
@@ -610,9 +610,9 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
       }
       else if (attrib.first.compare("COLOR_0") == 0)
       {
-        glBindBuffer(bufferView.target, normal_buffer);
-        glEnableVertexAttribArray(loc_a_normal);
-        glVertexAttribPointer(loc_a_normal,
+        glBindBuffer(bufferView.target, color_buffer);
+        glEnableVertexAttribArray(loc_a_color);
+        glVertexAttribPointer(loc_a_color,
                               accessor.type, accessor.componentType,
                               accessor.normalized ? GL_TRUE : GL_FALSE, byteStride,
                               BUFFER_OFFSET(accessor.byteOffset));
@@ -658,7 +658,7 @@ void draw_mesh(const tinygltf::Mesh &mesh, const kmuvcl::math::mat4f &mat_model)
     // 정점 attribute 배열 비활성화
     glDisableVertexAttribArray(loc_a_texcoord);
     glDisableVertexAttribArray(loc_a_normal);
-    //glDisableVertexAttribArray(loc_a_color);
+    glDisableVertexAttribArray(loc_a_color);
     glDisableVertexAttribArray(loc_a_position);
   }
   glUseProgram(0);

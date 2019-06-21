@@ -16,6 +16,7 @@ uniform float u_material_shininess;
 varying vec3 v_position_wc;
 varying vec3 v_normal_wc;
 varying vec2 v_texcoord;
+varying vec3 v_color;
 
 vec4 calc_color()
 {
@@ -35,6 +36,8 @@ vec4 calc_color()
 
   float rdotv = max(0.0, dot(r_wc, v_wc) );
   color += (pow(rdotv, u_material_shininess) * u_light_specular * u_material_specular);
+
+  color += vec4(v_color, 1.0f);
 
   return color;
 }
